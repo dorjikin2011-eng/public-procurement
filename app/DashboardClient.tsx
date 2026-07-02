@@ -140,6 +140,14 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
       .sort((a, b) => a.rawDate.localeCompare(b.rawDate));
   }, [filteredData]);
 
+  // Helper function to turn ISO strings into readable local date formats
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   return (
     <main className="min-h-screen bg-slate-50/60 p-4 md:p-8 font-sans antialiased text-slate-900">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -177,7 +185,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
           </div>
         </div>
 
-        {/* Timeline Matrix: Procurement Methods usage over Time */}
+        {/* Timeline Matrix */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
@@ -211,10 +219,8 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
           </div>
         </div>
 
-        {/* Structural Breakdown Distributions (Pie Charts) */}
+        {/* Charts Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* Category Share Allocation */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <PieIcon className="w-4 h-4 text-indigo-600" />
@@ -235,7 +241,6 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
             </div>
           </div>
 
-          {/* Methods Share Allocation */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <PieIcon className="w-4 h-4 text-emerald-600" />
@@ -255,19 +260,15 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
               </ResponsiveContainer>
             </div>
           </div>
-
         </div>
 
-        {/* Deep Comparative Analysis Tabs (Top 10 Rankings) */}
+        {/* Top 10 Section */}
         <div className="space-y-8">
-          
-          {/* Procuring Agencies Matrix Comparison */}
           <div>
             <h2 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-indigo-600" /> Top Procuring Agencies Metrics
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
                 <div className="p-4 border-b border-slate-100 bg-slate-50/50 font-bold text-xs text-slate-500 uppercase tracking-wider">Top 10 by Total Value (Millions Nu.)</div>
                 <div className="divide-y divide-slate-100">
@@ -291,17 +292,14 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
 
-          {/* Vendors / Contractors Matrix Comparison */}
           <div>
             <h2 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-emerald-600" /> Top Contractors & Vendor Allocations
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
                 <div className="p-4 border-b border-slate-100 bg-slate-50/50 font-bold text-xs text-slate-500 uppercase tracking-wider">Top 10 Corporate Partners by Value</div>
                 <div className="divide-y divide-slate-100">
@@ -325,13 +323,11 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
-
         </div>
 
-        {/* Restored: Dynamic Contracts Portfolio Table Log */}
+        {/* Dynamic Contracts Portfolio Table Log */}
         <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
           <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
             <ListChecks className="w-4 h-4 text-slate-700" />
@@ -346,7 +342,8 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                 <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <th className="p-4">Procuring Agency</th>
                   <th className="p-4">Contractor / Company Name</th>
-                  <th className="p-4">Dzongkhag</th>
+                  {/* Updated Column Header */}
+                  <th className="p-4">Award Date</th>
                   <th className="p-4">Method</th>
                   <th className="p-4 text-right">Value (M Nu.)</th>
                 </tr>
@@ -356,9 +353,10 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                   <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
                     <td className="p-4 font-medium text-slate-950 max-w-xs truncate">{item.procuring_agency}</td>
                     <td className="p-4 font-normal text-slate-600 max-w-xs truncate">{item.company_name}</td>
+                    {/* Rendered cleanly as a badge element */}
                     <td className="p-4">
-                      <span className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-0.5 rounded-md">
-                        {item.company_dzongkhag}
+                      <span className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded-md whitespace-nowrap">
+                        {formatDate(item.award_date)}
                       </span>
                     </td>
                     <td className="p-4 text-xs font-mono text-slate-500">{item.procurement_method}</td>
