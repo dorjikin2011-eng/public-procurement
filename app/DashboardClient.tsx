@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Building2, ShieldCheck, Briefcase, MapPin, TrendingUp, PieChart as PieIcon } from 'lucide-react';
+import { Search, Building2, ShieldCheck, Briefcase, MapPin, TrendingUp, PieChart as PieIcon, ListChecks } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, 
   PieChart, Pie, Cell, Legend, LineChart, Line 
@@ -92,7 +92,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
       .sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredData]);
 
-  // 4. Pie Chart Distoritions: Categories & Methods
+  // 4. Pie Chart Distributions: Categories & Methods
   const categoryPieData = useMemo(() => {
     const distribution: Record<string, number> = {};
     filteredData.forEach(item => {
@@ -329,6 +329,59 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
             </div>
           </div>
 
+        </div>
+
+        {/* Restored: Dynamic Contracts Portfolio Table Log */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+          <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+            <ListChecks className="w-4 h-4 text-slate-700" />
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Procurement Awards Records Registry</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Live-filtered matching audit registry rows ({filteredData.length} records found).</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="p-4">Procuring Agency</th>
+                  <th className="p-4">Contractor / Company Name</th>
+                  <th className="p-4">Dzongkhag</th>
+                  <th className="p-4">Method</th>
+                  <th className="p-4 text-right">Value (M Nu.)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                {filteredData.slice(0, 25).map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
+                    <td className="p-4 font-medium text-slate-950 max-w-xs truncate">{item.procuring_agency}</td>
+                    <td className="p-4 font-normal text-slate-600 max-w-xs truncate">{item.company_name}</td>
+                    <td className="p-4">
+                      <span className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-0.5 rounded-md">
+                        {item.company_dzongkhag}
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs font-mono text-slate-500">{item.procurement_method}</td>
+                    <td className="p-4 text-right font-semibold text-slate-900">
+                      {Number(item.value_million_nu).toFixed(3)}
+                    </td>
+                  </tr>
+                ))}
+                {filteredData.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-10 text-center text-sm text-slate-400 font-medium">
+                      No active records match the current search filters. Try refining your keywords.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {filteredData.length > 25 && (
+            <div className="p-4 text-center border-t border-slate-100 bg-slate-50/30 text-xs text-slate-400 font-medium">
+              Showing top 25 rows out of matching result criteria. Use search queries or dropdown targets to narrow results.
+            </div>
+          )}
         </div>
 
       </div>
