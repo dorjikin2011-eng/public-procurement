@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Building2, ShieldCheck, Briefcase, MapPin, TrendingUp, PieChart as PieIcon, ListChecks } from 'lucide-react';
+import { Search, Building2, ShieldCheck, Briefcase, MapPin, TrendingUp, PieChart as PieIcon, ListChecks, Layers } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, 
   PieChart, Pie, Cell, Legend, LineChart, Line 
@@ -42,7 +42,43 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
     return ['All', ...Array.from(list)].sort();
   }, [initialData]);
 
-  // 2. Top 10 Agencies (Sorted strictly by Value vs strictly by Count)
+  // 2. Vendor Volume Clustering Engine
+  const vendorClusters = useMemo(() => {
+    const vendorMetrics: Record<string, { count: number; value: number }> = {};
+    
+    filteredData.forEach(item => {
+      const name = item.company_name || 'Unknown';
+      if (!vendorMetrics[name]) vendorMetrics[name] = { count: 0, value: 0 };
+      vendorMetrics[name].count += 1;
+      vendorMetrics[name].value += Number(item.value_million_nu || 0);
+    });
+
+    const clusters = {
+      tier1: { name: 'Tier 1: High-Volume Anchors (≥ 5 Awards)', vendorsCount: 0, totalValue: 0, totalAwards: 0 },
+      tier2: { name: 'Tier 2: Mid-Market Operators (2-4 Awards)', vendorsCount: 0, totalValue: 0, totalAwards: 0 },
+      tier3: { name: 'Tier 3: Niche / Single-Project Contractors (1 Award)', vendorsCount: 0, totalValue: 0, totalAwards: 0 },
+    };
+
+    Object.values(vendorMetrics).forEach(v => {
+      if (v.count >= 5) {
+        clusters.tier1.vendorsCount += 1;
+        clusters.tier1.totalValue += v.value;
+        clusters.tier1.totalAwards += v.count;
+      } else if (v.count >= 2) {
+        clusters.tier2.vendorsCount += 1;
+        clusters.tier2.totalValue += v.value;
+        clusters.tier2.totalAwards += v.count;
+      } else {
+        clusters.tier3.vendorsCount += 1;
+        clusters.tier3.totalValue += v.value;
+        clusters.tier3.totalAwards += v.count;
+      }
+    });
+
+    return clusters;
+  }, [filteredData]);
+
+  // 3. Top 10 Agencies
   const agenciesByValue = useMemo(() => {
     const counts: Record<string, { count: number; value: number }> = {};
     filteredData.forEach(item => {
@@ -67,7 +103,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
       .sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredData]);
 
-  // 3. Top 10 Vendors (Sorted strictly by Value vs strictly by Count)
+  // 4. Top 10 Vendors
   const vendorsByValue = useMemo(() => {
     const counts: Record<string, { count: number; value: number }> = {};
     filteredData.forEach(item => {
@@ -92,7 +128,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
       .sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredData]);
 
-  // 4. Pie Chart Distributions: Categories & Methods
+  // 5. Pie Charts Data
   const categoryPieData = useMemo(() => {
     const distribution: Record<string, number> = {};
     filteredData.forEach(item => {
@@ -111,7 +147,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
     return Object.entries(distribution).map(([name, value]) => ({ name, value }));
   }, [filteredData]);
 
-  // 5. Timeline Matrix: Methods over Time Multi-series
+  // 6. Timeline Trends
   const uniqueMethods = useMemo(() => {
     return Array.from(new Set(filteredData.map(i => i.procurement_method).filter(Boolean)));
   }, [filteredData]);
@@ -124,7 +160,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
       const date = new Date(item.award_date);
       if (isNaN(date.getTime())) return;
       
-      const monthKey = date.toISOString().substring(0, 7); // YYYY-MM
+      const monthKey = date.toISOString().substring(0, 7);
       const method = item.procurement_method || 'Unknown';
       
       if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = {};
@@ -140,7 +176,6 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
       .sort((a, b) => a.rawDate.localeCompare(b.rawDate));
   }, [filteredData]);
 
-  // Helper function to turn ISO strings into readable local date formats
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const d = new Date(dateString);
@@ -152,7 +187,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
     <main className="min-h-screen bg-slate-50/60 p-4 md:p-8 font-sans antialiased text-slate-900">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Top Control Deck */}
+        {/* Control Deck */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -201,15 +236,7 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                   <Tooltip contentStyle={{ background: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '11px', border: 'none' }} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                   {uniqueMethods.map((method, index) => (
-                    <Line 
-                      key={method} 
-                      type="monotone" 
-                      dataKey={method} 
-                      stroke={COLORS[index % COLORS.length]} 
-                      strokeWidth={2} 
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }} 
-                    />
+                    <Line key={method} type="monotone" dataKey={method} stroke={COLORS[index % COLORS.length]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   ))}
                 </LineChart>
               </ResponsiveContainer>
@@ -262,7 +289,71 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
           </div>
         </div>
 
-        {/* Top 10 Section */}
+        {/* RESTORED: Vendor Volume Clustering Matrix Card Grid */}
+        <div className="space-y-4">
+          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-indigo-600" /> Market Density: Vendor Volume Clustering
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Tier 1 Card */}
+            <div className="bg-gradient-to-br from-indigo-50/40 to-white border border-indigo-100 rounded-2xl p-5 shadow-xs">
+              <div className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-md px-2 py-0.5 w-max mb-3">
+                {vendorClusters.tier1.name}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Unique Entities</p>
+                  <p className="text-xl font-extrabold text-slate-950">{vendorClusters.tier1.vendorsCount}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Financial Footprint</p>
+                  <p className="text-xl font-extrabold text-slate-950 font-mono">{vendorClusters.tier1.totalValue.toFixed(2)}M</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">Responsible for <span className="font-bold text-slate-800">{vendorClusters.tier1.totalAwards}</span> total award wins.</p>
+            </div>
+
+            {/* Tier 2 Card */}
+            <div className="bg-gradient-to-br from-amber-50/30 to-white border border-amber-100 rounded-2xl p-5 shadow-xs">
+              <div className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-0.5 w-max mb-3">
+                {vendorClusters.tier2.name}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Unique Entities</p>
+                  <p className="text-xl font-extrabold text-slate-950">{vendorClusters.tier2.vendorsCount}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Financial Footprint</p>
+                  <p className="text-xl font-extrabold text-slate-950 font-mono">{vendorClusters.tier2.totalValue.toFixed(2)}M</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">Responsible for <span className="font-bold text-slate-800">{vendorClusters.tier2.totalAwards}</span> total award wins.</p>
+            </div>
+
+            {/* Tier 3 Card */}
+            <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+              <div className="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200/60 rounded-md px-2 py-0.5 w-max mb-3">
+                {vendorClusters.tier3.name}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Unique Entities</p>
+                  <p className="text-xl font-extrabold text-slate-950">{vendorClusters.tier3.vendorsCount}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Financial Footprint</p>
+                  <p className="text-xl font-extrabold text-slate-950 font-mono">{vendorClusters.tier3.totalValue.toFixed(2)}M</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-100">Responsible for <span className="font-bold text-slate-800">{vendorClusters.tier3.totalAwards}</span> total award wins.</p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Top 10 Leaderboards Section */}
         <div className="space-y-8">
           <div>
             <h2 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
@@ -342,7 +433,6 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                 <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <th className="p-4">Procuring Agency</th>
                   <th className="p-4">Contractor / Company Name</th>
-                  {/* Updated Column Header */}
                   <th className="p-4">Award Date</th>
                   <th className="p-4">Method</th>
                   <th className="p-4 text-right">Value (M Nu.)</th>
@@ -353,7 +443,6 @@ export default function DashboardClient({ initialData }: { initialData: Procurem
                   <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
                     <td className="p-4 font-medium text-slate-950 max-w-xs truncate">{item.procuring_agency}</td>
                     <td className="p-4 font-normal text-slate-600 max-w-xs truncate">{item.company_name}</td>
-                    {/* Rendered cleanly as a badge element */}
                     <td className="p-4">
                       <span className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded-md whitespace-nowrap">
                         {formatDate(item.award_date)}
